@@ -2,7 +2,6 @@ package calc;
 
 import model.FaixaConsumo;
 import model.Estado;
-import java.math.*;
 
 public class CalcAgua {
 
@@ -23,5 +22,17 @@ public class CalcAgua {
             }
         }
         return valorAgua * (1 + estado.getCoef_Esg());
+    }
+    public double calcularPerCapita(double consumoM3, int residentes) {
+        double consumoLitros = consumoM3 * 1000;
+        return consumoLitros / (residentes * 30);
+    }
+
+    public String ConsumoONU(double perCapita) {
+        if (perCapita <= 110) {
+            return "Ideal (Base ONU)";
+        } else {
+            return "Acima da média recomendada";
+        }
     }
 }
