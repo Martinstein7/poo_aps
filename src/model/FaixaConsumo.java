@@ -15,11 +15,11 @@ public class FaixaConsumo {
     private int faixa4;
     private double step5;
     private int faixa5;
-    private String emp;
+    private String concessionaria;
 
     public FaixaConsumo(String estadoIdEstado, Double fixo, int volInc, Double step1, int faixa1, Double step2,
                         int faixa2, Double step3, int faixa3, Double step4,
-                        int faixa4, Double step5, int faixa5, String emp) {
+                        int faixa4, Double step5, int faixa5, String concessionaria) {
         this.estadoIdEstado = estadoIdEstado;
         this.fixo = fixo;
         this.volInc = volInc;
@@ -33,7 +33,7 @@ public class FaixaConsumo {
         this.faixa4 = faixa4;
         this.step5 = step5;
         this.faixa5 = faixa5;
-        this.emp = emp;
+        this.concessionaria = concessionaria;
     }
 
     public String getEstadoIdEstado() {return estadoIdEstado;}
@@ -49,8 +49,8 @@ public class FaixaConsumo {
     public int getFaixa4() {return faixa4;}
     public double getStep5() {return step5;}
     public int getFaixa5() {return faixa5;}
-    public String getEmp() {return emp;}
+    public String getConcessionaria() {return concessionaria;}
 
     public void setFixo(double fixo) {this.fixo = fixo;}
-    public void setEmp(String emp) {this.emp = emp;}
+    public void setConcessionaria(String concessionaria) {this.concessionaria = concessionaria;}
 }

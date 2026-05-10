@@ -4,7 +4,7 @@ import java.sql.*;
 
 public class Conexao {
     //puxa o arquivo do banco de dados que se encontra dentro da pasta
-    private static final String URL = "jdbc:sqlite:agua.db";
+    private static final String URL = "jdbc:sqlite:C:/Users/Usuario/IdeaProjects/poo-aps/agua.db";
 
     public static Connection getConexao(){
         try {
