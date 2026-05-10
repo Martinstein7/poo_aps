@@ -19,17 +19,17 @@ public class FaixaConsumoDAO {
                         result.getString("estado_idestado"),
                         result.getDouble("fixo"),
                         result.getInt("vol_inc"),
-                        result.getDouble("step1"),
-                        result.getInt("faixa1"),
-                        result.getDouble("step2"),
-                        result.getInt("faixa2"),
-                        result.getDouble("step3"),
-                        result.getInt("faixa3"),
-                        result.getDouble("step4"),
-                        result.getInt("faixa4"),
-                        result.getDouble("step5"),
-                        result.getInt("faixa5"),
-                        result.getString("emp")
+                        result.getDouble("step_1"),
+                        result.getInt("faixa_1"),
+                        result.getDouble("step_2"),
+                        result.getInt("faixa_2"),
+                        result.getDouble("step_3"),
+                        result.getInt("faixa_3"),
+                        result.getDouble("step_4"),
+                        result.getInt("faixa_4"),
+                        result.getDouble("step_5"),
+                        result.getInt("faixa_5"),
+                        result.getString("concessionaria")
                 );
             }
         } catch (SQLException e) {

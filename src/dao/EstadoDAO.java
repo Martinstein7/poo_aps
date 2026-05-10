@@ -19,8 +19,8 @@ public class EstadoDAO {
             //Utilizando os metodos contrutores criados
             return new Estado(
                     result.getString("idestado"),
-                    result.getString("nome_estado"),
-                    result.getDouble("cEsg"),
+                    result.getString("nome"),
+                    result.getDouble("coef_Esg"),
                     result.getDouble("consumo_medio")
             );
         }

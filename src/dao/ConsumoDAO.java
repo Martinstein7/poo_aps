@@ -13,7 +13,7 @@ public class ConsumoDAO {
 
     public void registrarConsumo(Consumo consumo) {
 
-        String sql = "INSERT INTO consumo (m3gastos, dataleitura, usuario_idusuario) VALUES (?,?,?)";
+        String sql = "INSERT INTO consumo (m3_gastos, data_leitura, usuario_idusuario) VALUES (?,?,?)";
 
 
         try (Connection connect = Conexao.getConexao();

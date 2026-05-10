@@ -22,6 +22,6 @@ public class CalcAgua {
                 restante -= gastoF;
             }
         }
-        return valorAgua * (1 + estado.getcEsg());
+        return valorAgua * (1 + estado.getCoef_Esg());
     }
 }
