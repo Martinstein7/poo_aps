@@ -8,28 +8,28 @@ public class FaixaConsumoDAO {
     public FaixaConsumo buscarPorEstado(String sigla) {
         String sql = "SELECT * FROM faixa_consumo WHERE estado_idestado = ?";
 
-        try (Connection conn = Conexao.getConexao();
-             PreparedStatement stmt = conn.prepareStatement(sql)) {
+        try (Connection connect = Conexao.getConexao();
+             PreparedStatement statement = connect.prepareStatement(sql)) {
 
-            stmt.setString(1, sigla);
-            ResultSet rs = stmt.executeQuery();
+            statement.setString(1, sigla);
+            ResultSet result = statement.executeQuery();
 
-            if (rs.next()) {
+            if (result.next()) {
                 return new FaixaConsumo(
-                        rs.getString("estado_idestado"),
-                        rs.getDouble("fixo"),
-                        rs.getInt("vol_inc"),
-                        rs.getDouble("step1"),
-                        rs.getInt("faixa1"),
-                        rs.getDouble("step2"),
-                        rs.getInt("faixa2"),
-                        rs.getDouble("step3"),
-                        rs.getInt("faixa3"),
-                        rs.getDouble("step4"),
-                        rs.getInt("faixa4"),
-                        rs.getDouble("step5"),
-                        rs.getInt("faixa5"),
-                        rs.getString("emp")
+                        result.getString("estado_idestado"),
+                        result.getDouble("fixo"),
+                        result.getInt("vol_inc"),
+                        result.getDouble("step1"),
+                        result.getInt("faixa1"),
+                        result.getDouble("step2"),
+                        result.getInt("faixa2"),
+                        result.getDouble("step3"),
+                        result.getInt("faixa3"),
+                        result.getDouble("step4"),
+                        result.getInt("faixa4"),
+                        result.getDouble("step5"),
+                        result.getInt("faixa5"),
+                        result.getString("emp")
                 );
             }
         } catch (SQLException e) {
