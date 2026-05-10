@@ -46,6 +46,12 @@ public class EntradaSaida {
         }
     }
 
+    private CalcAgua ca = new CalcAgua();
+
+    public CalcAgua getCalc() {
+        return ca;
+    }
+
     public String fResult(double valor) {
         return String.format("R$ %.2f", valor);
     }
