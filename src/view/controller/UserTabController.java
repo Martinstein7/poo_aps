@@ -94,7 +94,7 @@ public class UserTabController {
     @FXML
     void handleAdicionarUsuario(ActionEvent event) {
         try {
-            FXMLLoader loader = new FXMLLoader(getClass().getResource("/poo_aps/Registration.fxml"));
+            FXMLLoader loader = new FXMLLoader(getClass().getResource("/view/fxml/Registration.fxml"));
             Parent root = loader.load();
             Scene scene = new Scene(root, 900, 600);
             Stage stage = (Stage) userNameLabel.getScene().getWindow();
@@ -277,14 +277,12 @@ public class UserTabController {
         double mediaLitrosTotalCasa = mediaM3Mensal * 1000;
         double mediaLitrosPorPessoaDiaria = mediaLitrosTotalCasa / (usuarioAtivo.getNumResidentes() * 30);
 
-        //Busca as informações do estado do usuario no banco
         dao.EstadoDAO estadoDAO = new dao.EstadoDAO();
         model.Estado estadoReal = estadoDAO.buscarPorSigla(usuarioAtivo.getIdEstado());
 
         String textoValorConta = "";
         if (estadoReal != null) {
             calc.CalcAgua calculadora = new calc.CalcAgua();
-
             try {
                 double valorEstimado = calculadora.Calculo(mediaM3Mensal, null, estadoReal);
                 textoValorConta = String.format("\nValor estimado da conta (com esgoto de %s): R$ %.2f", estadoReal.getNome(), valorEstimado);
@@ -315,18 +313,4 @@ public class UserTabController {
         alert.setContentText(mensagem);
         alert.showAndWait();
     }
-    @FXML
-    void handleAjudaONU(ActionEvent event) {
-        Alert alert = new Alert(Alert.AlertType.INFORMATION);
-        alert.setTitle("Referência de Consumo Sustentável - ONU");
-        alert.setHeaderText("Objetivo de Desenvolvimento Sustentável 6 (ODS 6)");
-        alert.setContentText("A Organização das Nações Unidas (ONU) estipula que 110 litros de água por dia " +
-                "são mais do que suficientes para atender às necessidades básicas de higiene e alimentação de uma pessoa.\n\n" +
-                "Nosso sistema calcula o consumo per capita da sua residência dividindo o volume mensal em m³ " +
-                "pelo número de moradores e pelos 30 dias do mês, ajudando você a monitorar sua meta sustentável!");
-
-        alert.getDialogPane().getStylesheets().add(getClass().getResource("/view/controller/style.css").toExternalForm());
-        alert.showAndWait();
-    }
 }
-

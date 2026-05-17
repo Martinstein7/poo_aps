@@ -1,16 +1,15 @@
 package view.controller;
 
 import dao.UsuarioDAO;
+import javafx.scene.control.ComboBox;
 import model.Usuario;
-import javafx.application.Platform;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
+import javafx.scene.control.Alert;
 import javafx.scene.control.Button;
-import javafx.scene.control.ComboBox;
-import javafx.scene.control.Label;
 import javafx.scene.control.TextField;
 import javafx.stage.Stage;
 
@@ -20,55 +19,93 @@ public class RegistrationController {
     @FXML private ComboBox<String> stateComboBox;
     @FXML private TextField residentsField;
     @FXML private Button confirmButton;
-    @FXML private Label feedbackLabel;
 
     @FXML
     public void initialize() {
-        stateComboBox.getItems().addAll("SP", "RJ", "MG", "BA", "PR", "AC", "AL", "AP", "AM", "CE", "DF", "ES", "GO", "MA", "MT", "MS", "PA", "PB", "PE", "PI", "RN", "RS", "RO", "RR", "SC", "SE", "TO");
+        try {
+            dao.EstadoDAO estadoDAO = new dao.EstadoDAO();
+            java.util.List<model.Estado> estados = estadoDAO.listarTodos();
+
+            javafx.collections.ObservableList<String> siglas = javafx.collections.FXCollections.observableArrayList();
+            for (model.Estado e : estados) {
+                siglas.add(e.getIdEstado());
+            }
+            stateComboBox.setItems(siglas);
+        } catch (Exception e) {
+            System.out.println("Aviso: Falha ao preencher o ComboBox de estados. Preenchendo manualmente.");
+            stateComboBox.setItems(javafx.collections.FXCollections.observableArrayList(
+                    "AC", "AL", "AP", "AM", "BA", "CE", "DF", "ES", "GO", "MA", "MT", "MS", "MG",
+                    "PA", "PB", "PR", "PE", "PI", "RJ", "RN", "RS", "RO", "RR", "SC", "SP", "SE", "TO"
+            ));
+        }
     }
 
     @FXML
-    private void handleConfirmAction(ActionEvent event) {
-        String name = nameField.getText().trim();
-        String state = stateComboBox.getValue();
-        String residentsStr = residentsField.getText().trim();
+    void handleConfirmAction(ActionEvent event) {
+        String nome = nameField.getText().trim();
 
-        if (name.isEmpty() || state == null || residentsStr.isEmpty()) {
-            feedbackLabel.setStyle("-fx-text-fill: #e53935;");
-            feedbackLabel.setText("Por favor, preencha todos os campos.");
+        // CORREÇÃO: ComboBox não aceita .getText(). Usamos .getValue() para capturar o item selecionado.
+        String estadoSigla = stateComboBox.getValue() != null ? stateComboBox.getValue().toUpperCase() : "";
+
+        String moradoresTexto = residentsField.getText().trim();
+
+        if (nome.isEmpty() || estadoSigla.isEmpty() || moradoresTexto.isEmpty()) {
+            mostrarAlerta("Erro de Validação", "Por favor, preencha todos os campos.");
             return;
         }
 
+        int moradores;
         try {
-            int residents = Integer.parseInt(residentsStr);
-
-            UsuarioDAO usuarioDAO = new UsuarioDAO();
-            Usuario usuarioExistente = usuarioDAO.buscarPorNome(name);
-
-            if (usuarioExistente != null) {
-                feedbackLabel.setStyle("-fx-text-fill: #64B5F6;");
-                feedbackLabel.setText("Usuário encontrado! Entrando...");
-                Platform.runLater(() -> irParaAbaPrincipal(usuarioExistente));
-            } else {
-                Usuario novoUsuario = new Usuario(0, name, residents, state);
-                usuarioDAO.registrarUsuario(novoUsuario);
-
-                Usuario usuarioCadastrado = usuarioDAO.buscarPorNome(name);
-
-                feedbackLabel.setStyle("-fx-text-fill: #43A047;");
-                feedbackLabel.setText("Cadastro realizado com sucesso! Redirecionando...");
-                Platform.runLater(() -> irParaAbaPrincipal(usuarioCadastrado));
+            moradores = Integer.parseInt(moradoresTexto);
+            if (moradores <= 0) {
+                mostrarAlerta("Erro de Validação", "O número de residentes deve ser maior que zero.");
+                return;
             }
-
         } catch (NumberFormatException e) {
-            feedbackLabel.setStyle("-fx-text-fill: #e53935;");
-            feedbackLabel.setText("O número de residentes deve ser um valor inteiro.");
+            mostrarAlerta("Erro de Validação", "O campo de residentes deve conter apenas números inteiros.");
+            return;
+        }
+
+        dao.EstadoDAO estadoDAO = new dao.EstadoDAO();
+        model.Estado estadoReal = estadoDAO.buscarPorSigla(estadoSigla);
+        
+        String idEstado = "";
+        if (estadoReal != null) {
+            idEstado = estadoReal.getIdEstado();
+        } else {
+            mostrarAlerta("Erro de Validação", "Estado não encontrado no banco de dados.");
+            return;
+        }
+
+        UsuarioDAO usuarioDAO = new UsuarioDAO();
+
+        if (usuarioDAO.listarNomesUsuarios().contains(nome)) {
+            mostrarAlerta("Usuário Já Existe", "Este nome de usuário já está cadastrado. Redirecionando...");
+            Usuario usuarioExistente = usuarioDAO.buscarPorNome(nome);
+            irParaAbaPrincipal(usuarioExistente);
+            return;
+        }
+
+        Usuario novoUsuario = new Usuario(0, nome, moradores, idEstado);
+
+        try {
+            usuarioDAO.registrarUsuario(novoUsuario);
+
+            Usuario usuarioCadastrado = usuarioDAO.buscarPorNome(nome);
+            if (usuarioCadastrado != null) {
+                irParaAbaPrincipal(usuarioCadastrado);
+            } else {
+                mostrarAlerta("Erro", "Falha ao recuperar o usuário cadastrado.");
+            }
+        } catch (Exception e) {
+            mostrarAlerta("Erro no Banco", "Não foi possível salvar o usuário no banco de dados.");
+            e.printStackTrace();
         }
     }
 
     private void irParaAbaPrincipal(Usuario usuario) {
         try {
-            FXMLLoader loader = new FXMLLoader(getClass().getResource("/poo_aps/UserTab.fxml"));
+            FXMLLoader loader = new FXMLLoader(getClass().getResource("/view/fxml/UserTab.fxml"));
             Parent root = loader.load();
 
             UserTabController userTabController = loader.getController();
@@ -77,10 +114,17 @@ public class RegistrationController {
             Scene scene = new Scene(root, 900, 600);
             Stage stage = (Stage) nameField.getScene().getWindow();
             stage.setScene(scene);
-
         } catch (Exception e) {
             e.printStackTrace();
-            System.out.println("Erro ao tentar abrir a UserTab: Verifique o caminho do arquivo!");
+            mostrarAlerta("Erro de Carregamento", "Erro ao tentar abrir a UserTab: Verifique o caminho do arquivo!");
         }
+    }
+
+    private void mostrarAlerta(String titulo, String mensagem) {
+        Alert alert = new Alert(Alert.AlertType.INFORMATION);
+        alert.setTitle(titulo);
+        alert.setHeaderText(null);
+        alert.setContentText(mensagem);
+        alert.showAndWait();
     }
 }
