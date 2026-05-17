@@ -1,0 +1,132 @@
+
+.root {
+    -fx-background-color: #121212;
+    -fx-font-family: "Segoe UI", Helvetica, Arial, sans-serif;
+    -fx-text-fill: #e0e0e0;
+}
+
+.label {
+    -fx-text-fill: #e0e0e0;
+}
+
+.title-label {
+    -fx-font-size: 24px;
+    -fx-font-weight: bold;
+    -fx-text-fill: #64B5F6; 
+}
+
+/* Botoes de acao */
+.button {
+    -fx-background-color: #1E88E5; 
+    -fx-text-fill: #ffffff;
+    -fx-background-radius: 6px;
+    -fx-font-weight: bold;
+    -fx-padding: 8px 18px;
+    -fx-cursor: hand;
+    -fx-border-color: transparent;
+}
+
+.button:hover {
+    -fx-background-color: #42A5F5; 
+}
+
+.button:pressed {
+    -fx-background-color: #1565C0;
+}
+
+/* campo de entrada de dados */
+.text-field, .combo-box, .spinner {
+    -fx-background-color: #1e1e1e;
+    -fx-text-fill: #ffffff;
+    -fx-background-radius: 4px;
+    -fx-border-color: #333333;
+    -fx-border-radius: 4px;
+    -fx-padding: 6px;
+}
+
+.text-field:focused, .combo-box:focused, .spinner:focused {
+    -fx-border-color: #1E88E5; 
+    -fx-background-color: #2a2a2a;
+}
+
+.combo-box > .list-cell {
+    -fx-text-fill: #cccccc; 
+}
+
+.combo-box-popup .list-view {
+    -fx-background-color: #1e1e1e;
+    -fx-border-color: #333333;
+    -fx-border-width: 1px;
+}
+
+.combo-box-popup .list-cell {
+    -fx-text-fill: #cccccc;
+    -fx-background-color: #1e1e1e;
+    -fx-padding: 8px; 
+}
+
+.combo-box-popup .list-cell:filled:hover, 
+.combo-box-popup .list-cell:filled:selected {
+    -fx-background-color: #333333;
+    -fx-text-fill: #ffffff;
+}
+
+/* TableView e caixas de destaque */
+.caixa-destaque {
+    -fx-border-color: #ffffff;
+    -fx-border-width: 2px;
+    -fx-padding: 20px;
+}
+
+.tabela-destaque {
+    -fx-border-color: #ffffff;
+    -fx-border-width: 2px;
+}
+
+.table-view {
+    -fx-background-color: transparent;
+    -fx-border-radius: 6px;
+}
+
+.table-view .column-header-background {
+    -fx-background-color: #1a1a1a;
+    -fx-border-color: transparent transparent #333333 transparent;
+}
+
+.table-view .column-header {
+    -fx-background-color: transparent;
+    -fx-size: 40px;
+}
+
+.table-view .column-header .label {
+    -fx-text-fill: #90CAF9; 
+    -fx-font-weight: bold;
+    -fx-alignment: center-left;
+}
+
+.table-view .table-cell {
+    -fx-border-color: transparent transparent #1f1f1f transparent;
+    -fx-padding: 10px;
+    -fx-text-fill: #cccccc;
+}
+
+.table-row-cell {
+    -fx-background-color: #121212;
+}
+
+.table-row-cell:odd {
+    -fx-background-color: #171717;
+}
+
+.table-row-cell:selected {
+    -fx-background-color: #0D47A1;
+    -fx-table-cell-border-color: transparent;
+}
+
+.scroll-bar:horizontal, .scroll-bar:vertical {
+    -fx-background-color: #121212;
+}
+.scroll-bar:horizontal .thumb, .scroll-bar:vertical .thumb {
+    -fx-background-color: #333333;
+    -fx-background-radius: 4px;
+}
