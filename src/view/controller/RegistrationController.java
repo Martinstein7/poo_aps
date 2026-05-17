@@ -27,7 +27,7 @@ public class RegistrationController {
     }
 
     @FXML
-    void handleConfirmAction(ActionEvent event) {
+    private void handleConfirmAction(ActionEvent event) {
         String name = nameField.getText();
         String state = stateComboBox.getValue();
         String residentsStr = residentsField.getText();
