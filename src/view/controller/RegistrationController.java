@@ -68,7 +68,7 @@ public class RegistrationController {
 
         dao.EstadoDAO estadoDAO = new dao.EstadoDAO();
         model.Estado estadoReal = estadoDAO.buscarPorSigla(estadoSigla);
-        
+
         String idEstado = "";
         if (estadoReal != null) {
             idEstado = estadoReal.getIdEstado();

@@ -38,7 +38,6 @@ public class UserTabController {
     public void initialize() {
         volumeColumn.setCellValueFactory(cell -> new SimpleStringProperty(String.format("%.3f", cell.getValue().getM3Gastos())));
         dateColumn.setCellValueFactory(cell -> new SimpleStringProperty(cell.getValue().getDataLeitura()));
-
         configurarColunaDeAcoes();
 
         historyTable.setRowFactory(tv -> {
@@ -263,7 +262,7 @@ public class UserTabController {
 
     private void atualizarStatusMedia12Meses() {
         if (tableList.isEmpty()) {
-            statusLabel.setText("Nenhum registro de consumo encontrado para este perfil.");
+            statusLabel.setText("Nenhum registro de consumo encontrado.");
             statusLabel.setStyle("-fx-text-fill: #ffffff;");
             return;
         }
@@ -277,32 +276,22 @@ public class UserTabController {
         double mediaLitrosTotalCasa = mediaM3Mensal * 1000;
         double mediaLitrosPorPessoaDiaria = mediaLitrosTotalCasa / (usuarioAtivo.getNumResidentes() * 30);
 
-        dao.EstadoDAO estadoDAO = new dao.EstadoDAO();
-        model.Estado estadoReal = estadoDAO.buscarPorSigla(usuarioAtivo.getIdEstado());
+        double metaOnuDiariaPorPessoa = 110.0;
 
-        String textoValorConta = "";
-        if (estadoReal != null) {
-            calc.CalcAgua calculadora = new calc.CalcAgua();
-            try {
-                double valorEstimado = calculadora.Calculo(mediaM3Mensal, null, estadoReal);
-                textoValorConta = String.format("\nValor estimado da conta (com esgoto de %s): R$ %.2f", estadoReal.getNome(), valorEstimado);
-            } catch (Exception e) {
-                textoValorConta = String.format("\nEstado: %s (Coef. Esgoto: %.2f)", estadoReal.getNome(), estadoReal.getCoef_Esg());
-            }
-        }
+        String dados = String.format("%.0f L/mês (%.1f L/dia p/ pessoa)", mediaLitrosTotalCasa, mediaLitrosPorPessoaDiaria);
 
-        calc.CalcAgua calculadora = new calc.CalcAgua();
-        String mensagemOnu = calculadora.ConsumoONU(mediaLitrosPorPessoaDiaria);
+        if (mediaLitrosPorPessoaDiaria > metaOnuDiariaPorPessoa) {
+            double excPessoa = mediaLitrosPorPessoaDiaria - metaOnuDiariaPorPessoa;
+            statusLabel.setText(dados + String.format(" - ACIMA DA MEDIA DA ONU! Reduza %.0f L/dia por pessoa.", excPessoa));
+            statusLabel.setStyle("-fx-text-fill: #F44336; -fx-font-size: 11px;");
 
-        statusLabel.setText(String.format("Sua média residencial mensal é de %.1f Litros.\nMédia diária por pessoa: %.1f L/dia%s\n\n%s",
-                mediaLitrosTotalCasa, mediaLitrosPorPessoaDiaria, textoValorConta, mensagemOnu));
+        } else if (mediaLitrosPorPessoaDiaria >= (metaOnuDiariaPorPessoa * 0.3)) {
+            statusLabel.setText(dados + " - DENTRO DA MEDIA DA ONU! Parabéns pelo consumo consciente.");
+            statusLabel.setStyle("-fx-text-fill: #4CAF50; -fx-font-size: 11px;");
 
-        if (mediaLitrosPorPessoaDiaria < (110 * 0.3)) {
-            statusLabel.setStyle("-fx-text-fill: #FF9800;");
-        } else if (mediaLitrosPorPessoaDiaria <= 110) {
-            statusLabel.setStyle("-fx-text-fill: #4CAF50;");
         } else {
-            statusLabel.setStyle("-fx-text-fill: #F44336;");
+            statusLabel.setText(dados + " - ABAIXO DA MEDIA DA ONU! Verifique o hidrômetro ou erros de digitação.");
+            statusLabel.setStyle("-fx-text-fill: #FF9800; -fx-font-size: 11px;");
         }
     }
 
@@ -311,6 +300,20 @@ public class UserTabController {
         alert.setTitle(titulo);
         alert.setHeaderText(null);
         alert.setContentText(mensagem);
+
+        if (statusLabel != null && statusLabel.getScene() != null) {
+            alert.initOwner(statusLabel.getScene().getWindow());
+        }
+
+        try {
+            java.net.URL cssUrl = getClass().getResource("/view/fxml/style.css");
+            if (cssUrl != null) {
+                alert.getDialogPane().getStylesheets().add(cssUrl.toExternalForm());
+            }
+        } catch (Exception e) {
+            System.out.println("Aviso: Não foi possível aplicar o estilo visual ao alerta.");
+        }
+
         alert.showAndWait();
     }
 }
