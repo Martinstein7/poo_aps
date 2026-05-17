@@ -1,11 +1,9 @@
 package view.controller;
 
-import java.io.IOException;
-import java.time.LocalDate;
-import java.time.format.DateTimeFormatter;
-import java.util.Arrays;
-import java.util.List;
-
+import dao.ConsumoDAO;
+import dao.UsuarioDAO;
+import model.Consumo;
+import model.Usuario;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
@@ -15,62 +13,48 @@ import javafx.fxml.FXMLLoader;
 import javafx.geometry.Insets;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
-import javafx.scene.control.Alert;
-import javafx.scene.control.Button;
-import javafx.scene.control.ButtonBar;
-import javafx.scene.control.ButtonType;
-import javafx.scene.control.ChoiceDialog;
-import javafx.scene.control.DatePicker;
-import javafx.scene.control.Dialog;
-import javafx.scene.control.Label;
-import javafx.scene.control.TableCell;
-import javafx.scene.control.TableColumn;
-import javafx.scene.control.TableRow;
-import javafx.scene.control.TableView;
-import javafx.scene.control.TextField;
-import javafx.scene.control.TextInputDialog;
-import javafx.scene.control.Tooltip;
+import javafx.scene.control.*;
 import javafx.scene.layout.GridPane;
 import javafx.scene.layout.HBox;
 import javafx.stage.Stage;
 import javafx.util.Duration;
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
+import java.util.List;
 
 public class UserTabController {
 
     @FXML private Label userNameLabel;
     @FXML private Label statusLabel;
-    @FXML private TableView<ConsumptionRecord> historyTable;
-    @FXML private TableColumn<ConsumptionRecord, String> volumeColumn;
-    @FXML private TableColumn<ConsumptionRecord, String> dateColumn;
-    @FXML private TableColumn<ConsumptionRecord, Void> actionsColumn;
+    @FXML private TableView<Consumo> historyTable;
+    @FXML private TableColumn<Consumo, String> volumeColumn;
+    @FXML private TableColumn<Consumo, String> dateColumn;
+    @FXML private TableColumn<Consumo, Void> actionsColumn;
 
-    // TODO Quando o banco SQLite estiver conectado, delete a MASTER_LIST.
-    // A tableList será populada com "dao.buscarConsumosPorUsuario(nomeUsuarioLogado)"
-    private ObservableList<ConsumptionRecord> MASTER_LIST = FXCollections.observableArrayList();
-    private ObservableList<ConsumptionRecord> tableList = FXCollections.observableArrayList();
-
-    private String nomeUsuarioLogado = "Desconhecido";
-    private int numeroResidentes = 1;
+    private ObservableList<Consumo> tableList = FXCollections.observableArrayList();
+    private Usuario usuarioAtivo;
 
     @FXML
     public void initialize() {
-        volumeColumn.setCellValueFactory(cell -> new SimpleStringProperty(String.format("%.3f", cell.getValue().getVolumeM3())));
-        dateColumn.setCellValueFactory(cell -> new SimpleStringProperty(cell.getValue().getDate()));
+        volumeColumn.setCellValueFactory(cell -> new SimpleStringProperty(String.format("%.3f", cell.getValue().getM3Gastos())));
+        dateColumn.setCellValueFactory(cell -> new SimpleStringProperty(cell.getValue().getDataLeitura()));
 
         configurarColunaDeAcoes();
 
         historyTable.setRowFactory(tv -> {
-            TableRow<ConsumptionRecord> row = new TableRow<>();
+            TableRow<Consumo> row = new TableRow<>();
             Tooltip tooltip = new Tooltip();
             tooltip.setShowDelay(Duration.millis(50));
             tooltip.setHideDelay(Duration.millis(50));
             tooltip.setStyle("-fx-font-size: 14px; -fx-padding: 10px;");
 
             row.itemProperty().addListener((obs, oldItem, newItem) -> {
-                if (newItem != null) {
-                    double litros = newItem.getVolumeM3() * 1000;
-                    String status = (litros <= (110.0 * numeroResidentes)) ? "Ideal (Abaixo da média da ONU)" : "Acima da média da ONU";
-                    String textoResumo = "Relatório de " + newItem.getDate() + "\nConsumo: " + litros + " Litros\nStatus: " + status;
+                if (newItem != null && usuarioAtivo != null) {
+                    double litros = newItem.getM3Gastos() * 1000;
+                    double mediaDiariaPessoa = litros / (usuarioAtivo.getNumResidentes() * 30);
+
+                    String status = (mediaDiariaPessoa <= 110.0) ? "Ideal (Dentro da média da ONU)" : "Acima da média da ONU";
+                    String textoResumo = "Relatório de " + newItem.getDataLeitura() + "\nConsumo Total: " + litros + " Litros\nPor Pessoa: " + String.format("%.1f", mediaDiariaPessoa) + " L/dia\nStatus: " + status;
                     tooltip.setText(textoResumo);
                     row.setTooltip(tooltip);
                 } else {
@@ -80,34 +64,30 @@ public class UserTabController {
             return row;
         });
 
-        // Dados inventados como se fosse o banco de dados
-        MASTER_LIST.add(new ConsumptionRecord("1", "16/05/2026", 0.045, "Anderson"));
-        MASTER_LIST.add(new ConsumptionRecord("2", "15/05/2026", 0.060, "Anderson"));
-        MASTER_LIST.add(new ConsumptionRecord("3", "14/05/2026", 0.080, "Willian"));
         historyTable.setItems(tableList);
     }
 
-    public void inicializarComUsuarioFicticio(String nome, String estado, int residentes) {
-        this.nomeUsuarioLogado = nome;
-        this.numeroResidentes = residentes;
-        userNameLabel.setText(nomeUsuarioLogado);
-        filtrarTabelaPorUsuarioAtivo();
+    public void inicializarComUsuarioReal(Usuario usuario) {
+        this.usuarioAtivo = usuario;
+        userNameLabel.setText(usuarioAtivo.getNome());
+        atualizarTabelaBancoDados();
     }
 
     @FXML
     void handleAlterarUsuario(ActionEvent event) {
-        // TODO Substituir lista estática por "SELECT nome FROM usuarios"
-        List<String> usuariosCadastrados = Arrays.asList("Anderson", "Willian", "Lucas", "Maria");
+        UsuarioDAO usuarioDAO = new UsuarioDAO();
+        List<String> usuariosCadastrados = usuarioDAO.listarNomesUsuarios();
 
-        ChoiceDialog<String> dialog = new ChoiceDialog<>(nomeUsuarioLogado, usuariosCadastrados);
+        ChoiceDialog<String> dialog = new ChoiceDialog<>(usuarioAtivo.getNome(), usuariosCadastrados);
         dialog.setTitle("Trocar de Usuário");
         dialog.setHeaderText("Alternar contexto do sistema");
         dialog.setContentText("Selecione o perfil que deseja visualizar:");
 
         dialog.showAndWait().ifPresent(usuarioSelecionado -> {
-            // TODO Substituir por busca real de residentes daquele usuário no banco
-            int residentesSimulados = usuarioSelecionado.equals("Anderson") ? 3 : 2;
-            inicializarComUsuarioFicticio(usuarioSelecionado, "SP", residentesSimulados);
+            Usuario usuarioEncontrado = usuarioDAO.buscarPorNome(usuarioSelecionado);
+            if (usuarioEncontrado != null) {
+                inicializarComUsuarioReal(usuarioEncontrado);
+            }
         });
     }
 
@@ -119,7 +99,7 @@ public class UserTabController {
             Scene scene = new Scene(root, 900, 600);
             Stage stage = (Stage) userNameLabel.getScene().getWindow();
             stage.setScene(scene);
-        } catch (IOException e) {
+        } catch (Exception e) {
             e.printStackTrace();
             mostrarAlerta("Erro", "Não foi possível carregar a tela de registro.");
         }
@@ -127,31 +107,26 @@ public class UserTabController {
 
     @FXML
     void handleExcluirUsuario(ActionEvent event) {
-        // TODO Substituir lista por "SELECT nome FROM usuarios"
-        List<String> usuariosCadastrados = Arrays.asList("Anderson", "Willian", "Lucas", "Maria");
+        UsuarioDAO usuarioDAO = new UsuarioDAO();
+        List<String> usuariosCadastrados = usuarioDAO.listarNomesUsuarios();
 
-        ChoiceDialog<String> dialog = new ChoiceDialog<>(nomeUsuarioLogado, usuariosCadastrados);
+        ChoiceDialog<String> dialog = new ChoiceDialog<>(usuarioAtivo.getNome(), usuariosCadastrados);
         dialog.setTitle("Excluir Usuário");
         dialog.setHeaderText("Atenção: Esta ação apagará o perfil e todo o seu histórico hídrico.");
         dialog.setContentText("Selecione o usuário que deseja EXCLUIR:");
 
         dialog.showAndWait().ifPresent(usuarioParaExcluir -> {
-            // TODO Executar DELETE no banco de dados aqui (tabela usuario e consumos)
-            MASTER_LIST.removeIf(record -> record.getUserAdded().equals(usuarioParaExcluir));
+            Usuario encontrado = usuarioDAO.buscarPorNome(usuarioParaExcluir);
+            if (encontrado != null) {
+                usuarioDAO.excluirUsuario(encontrado.getIdUsuario());
 
-            if (usuarioParaExcluir.equals(nomeUsuarioLogado)) {
-                mostrarAlerta("Usuário Excluído", "Você excluiu o seu próprio perfil ativo. O sistema fará o logoff.");
-                try {
-                    FXMLLoader loader = new FXMLLoader(getClass().getResource("/poo_aps/Registration.fxml"));
-                    Parent root = loader.load();
-                    Stage stage = (Stage) userNameLabel.getScene().getWindow();
-                    stage.setScene(new Scene(root, 900, 600));
-                } catch (IOException e) {
-                    e.printStackTrace();
+                if (encontrado.getIdUsuario() == usuarioAtivo.getIdUsuario()) {
+                    mostrarAlerta("Usuário Excluído", "Você excluiu o seu próprio perfil ativo. O sistema fará o logoff.");
+                    handleAdicionarUsuario(null);
+                } else {
+                    mostrarAlerta("Sucesso", "O usuário " + usuarioParaExcluir + " foi apagado do banco.");
+                    atualizarTabelaBancoDados();
                 }
-            } else {
-                mostrarAlerta("Sucesso", "O usuário " + usuarioParaExcluir + " foi apagado do banco.");
-                filtrarTabelaPorUsuarioAtivo();
             }
         });
     }
@@ -165,8 +140,13 @@ public class UserTabController {
 
         dialog.showAndWait().ifPresent(m3 -> {
             try {
-                double litros = Double.parseDouble(m3.replace(",", ".")) * 1000;
-                mostrarAlerta("Resultado do Cálculo", litros + " Litros. Status: Simulação concluída (não salvo no BD).");
+                double litrosTotal = Double.parseDouble(m3.replace(",", ".")) * 1000;
+                double perCapita = litrosTotal / (usuarioAtivo.getNumResidentes() * 30);
+
+                calc.CalcAgua calculadora = new calc.CalcAgua();
+                String resultadoOnu = calculadora.ConsumoONU(perCapita);
+
+                mostrarAlerta("Resultado da Simulação", String.format("Gasto Total: %.1f Litros\nPor Pessoa: %.1f L/dia\n\nStatus ONU: %s", litrosTotal, perCapita, resultadoOnu));
             } catch (NumberFormatException e) {
                 mostrarAlerta("Erro", "Valor inválido.");
             }
@@ -178,12 +158,12 @@ public class UserTabController {
         abrirDialogoEdicaoInsercao(null);
     }
 
-    private void filtrarTabelaPorUsuarioAtivo() {
+    private void atualizarTabelaBancoDados() {
         tableList.clear();
-        for (ConsumptionRecord record : MASTER_LIST) {
-            if (record.getUserAdded().equals(nomeUsuarioLogado)) {
-                tableList.add(record);
-            }
+        if (usuarioAtivo != null) {
+            ConsumoDAO consumoDAO = new ConsumoDAO();
+            List<Consumo> listaDoBanco = consumoDAO.listarPorUsuario(usuarioAtivo.getIdUsuario());
+            tableList.addAll(listaDoBanco);
         }
         atualizarStatusMedia12Meses();
     }
@@ -199,15 +179,15 @@ public class UserTabController {
                 deleteBtn.setStyle("-fx-background-color: #F44336; -fx-text-fill: white; -fx-cursor: hand;");
 
                 editBtn.setOnAction(event -> {
-                    ConsumptionRecord record = getTableView().getItems().get(getIndex());
+                    Consumo record = getTableView().getItems().get(getIndex());
                     abrirDialogoEdicaoInsercao(record);
                 });
 
                 deleteBtn.setOnAction(event -> {
-                    ConsumptionRecord record = getTableView().getItems().get(getIndex());
-                    // TODO Executar DELETE FROM consumo WHERE id = record.getId()
-                    MASTER_LIST.remove(record);
-                    filtrarTabelaPorUsuarioAtivo();
+                    Consumo record = getTableView().getItems().get(getIndex());
+                    ConsumoDAO consumoDAO = new ConsumoDAO();
+                    consumoDAO.deletarConsumo(record.getIdConsumo());
+                    atualizarTabelaBancoDados();
                 });
             }
 
@@ -219,8 +199,8 @@ public class UserTabController {
         });
     }
 
-    private void abrirDialogoEdicaoInsercao(ConsumptionRecord recordToEdit) {
-        boolean isEdit = (recordToEdit != null);
+    private void abrirDialogoEdicaoInsercao(Consumo consumoParaEditar) {
+        boolean isEdit = (consumoParaEditar != null);
 
         Dialog<ButtonType> dialog = new Dialog<>();
         dialog.setTitle(isEdit ? "Editar Consumo" : "Novo Consumo");
@@ -234,15 +214,15 @@ public class UserTabController {
         grid.setPadding(new Insets(20, 150, 10, 10));
 
         TextField m3Field = new TextField();
-        m3Field.setPromptText("Ex: 0.125");
+        m3Field.setPromptText("Ex: 12.5");
 
         DatePicker datePicker = new DatePicker();
         datePicker.setPromptText("Selecione a data");
 
         if (isEdit) {
-            m3Field.setText(String.valueOf(recordToEdit.getVolumeM3()));
+            m3Field.setText(String.valueOf(consumoParaEditar.getM3Gastos()));
             try {
-                datePicker.setValue(LocalDate.parse(recordToEdit.getDate(), DateTimeFormatter.ofPattern("dd/MM/yyyy")));
+                datePicker.setValue(LocalDate.parse(consumoParaEditar.getDataLeitura(), DateTimeFormatter.ofPattern("dd/MM/yyyy")));
             } catch (Exception e) {
                 datePicker.setValue(LocalDate.now());
             }
@@ -263,37 +243,67 @@ public class UserTabController {
                     double novoVolume = Double.parseDouble(m3Field.getText().replace(",", "."));
                     String novaData = datePicker.getValue().format(DateTimeFormatter.ofPattern("dd/MM/yyyy"));
 
+                    ConsumoDAO consumoDAO = new ConsumoDAO();
+
                     if (isEdit) {
-                        // TODO Executar UPDATE consumo SET volume = ?, data = ? WHERE id = ?
-                        recordToEdit.setVolumeM3(novoVolume);
-                        recordToEdit.setDate(novaData);
-                        historyTable.refresh();
-                        atualizarStatusMedia12Meses();
+                        consumoParaEditar.setM3Gastos(novoVolume);
+                        consumoParaEditar.setDataLeitura(novaData);
+                        consumoDAO.atualizarConsumo(consumoParaEditar);
                     } else {
-                        // TODO Executar INSERT INTO consumo (usuario_id, volume, data) VALUES (...)
-                        MASTER_LIST.add(0, new ConsumptionRecord("NOVO_ID", novaData, novoVolume, nomeUsuarioLogado));
-                        filtrarTabelaPorUsuarioAtivo();
+                        Consumo novo = new Consumo(0, novoVolume, novaData, usuarioAtivo.getIdUsuario());
+                        consumoDAO.registrarConsumo(novo);
                     }
-                } catch (NumberFormatException | NullPointerException e) {
-                    mostrarAlerta("Erro", "Por favor, preencha a data e insira um número válido para m³.");
+                    atualizarTabelaBancoDados();
+                } catch (Exception e) {
+                    mostrarAlerta("Erro", "Por favor, preencha os campos com valores válidos.");
                 }
             }
         });
     }
 
     private void atualizarStatusMedia12Meses() {
-        double soma = 0;
-        for (ConsumptionRecord r : tableList) soma += r.getVolumeM3();
+        if (tableList.isEmpty()) {
+            statusLabel.setText("Nenhum registro de consumo encontrado para este perfil.");
+            statusLabel.setStyle("-fx-text-fill: #ffffff;");
+            return;
+        }
 
-        double mediaM3 = tableList.isEmpty() ? 0 : soma / tableList.size();
-        double mediaLitros = mediaM3 * 1000;
-        double metaCasa = 110.0 * numeroResidentes;
+        double somaM3 = 0;
+        for (Consumo c : tableList) {
+            somaM3 += c.getM3Gastos();
+        }
 
-        if (mediaLitros <= metaCasa) {
-            statusLabel.setText(String.format("Status: Seu consumo médio de %.1f L/dia está IDEAL e dentro da meta que a ONU propôs (%.1f L/dia para %d pessoa(s)).", mediaLitros, metaCasa, numeroResidentes));
+        double mediaM3Mensal = somaM3 / tableList.size();
+        double mediaLitrosTotalCasa = mediaM3Mensal * 1000;
+        double mediaLitrosPorPessoaDiaria = mediaLitrosTotalCasa / (usuarioAtivo.getNumResidentes() * 30);
+
+        //Busca as informações do estado do usuario no banco
+        dao.EstadoDAO estadoDAO = new dao.EstadoDAO();
+        model.Estado estadoReal = estadoDAO.buscarPorSigla(usuarioAtivo.getIdEstado());
+
+        String textoValorConta = "";
+        if (estadoReal != null) {
+            calc.CalcAgua calculadora = new calc.CalcAgua();
+
+            try {
+                double valorEstimado = calculadora.Calculo(mediaM3Mensal, null, estadoReal);
+                textoValorConta = String.format("\nValor estimado da conta (com esgoto de %s): R$ %.2f", estadoReal.getNome(), valorEstimado);
+            } catch (Exception e) {
+                textoValorConta = String.format("\nEstado: %s (Coef. Esgoto: %.2f)", estadoReal.getNome(), estadoReal.getCoef_Esg());
+            }
+        }
+
+        calc.CalcAgua calculadora = new calc.CalcAgua();
+        String mensagemOnu = calculadora.ConsumoONU(mediaLitrosPorPessoaDiaria);
+
+        statusLabel.setText(String.format("Sua média residencial mensal é de %.1f Litros.\nMédia diária por pessoa: %.1f L/dia%s\n\n%s",
+                mediaLitrosTotalCasa, mediaLitrosPorPessoaDiaria, textoValorConta, mensagemOnu));
+
+        if (mediaLitrosPorPessoaDiaria < (110 * 0.3)) {
+            statusLabel.setStyle("-fx-text-fill: #FF9800;");
+        } else if (mediaLitrosPorPessoaDiaria <= 110) {
             statusLabel.setStyle("-fx-text-fill: #4CAF50;");
         } else {
-            statusLabel.setText(String.format("Status: Seu consumo médio de %.1f L/dia está ACIMA DA MÉDIA que a ONU propôs como ideal (%.1f L/dia).", mediaLitros, metaCasa));
             statusLabel.setStyle("-fx-text-fill: #F44336;");
         }
     }
@@ -305,23 +315,18 @@ public class UserTabController {
         alert.setContentText(mensagem);
         alert.showAndWait();
     }
+    @FXML
+    void handleAjudaONU(ActionEvent event) {
+        Alert alert = new Alert(Alert.AlertType.INFORMATION);
+        alert.setTitle("Referência de Consumo Sustentável - ONU");
+        alert.setHeaderText("Objetivo de Desenvolvimento Sustentável 6 (ODS 6)");
+        alert.setContentText("A Organização das Nações Unidas (ONU) estipula que 110 litros de água por dia " +
+                "são mais do que suficientes para atender às necessidades básicas de higiene e alimentação de uma pessoa.\n\n" +
+                "Nosso sistema calcula o consumo per capita da sua residência dividindo o volume mensal em m³ " +
+                "pelo número de moradores e pelos 30 dias do mês, ajudando você a monitorar sua meta sustentável!");
 
-    public static class ConsumptionRecord {
-        private String id;
-        private String date;
-        private double volumeM3;
-        private String userAdded; // Mantido para o Mock identificar de quem é
-
-        public ConsumptionRecord(String id, String date, double volumeM3, String userAdded) {
-            this.id = id; this.date = date; this.volumeM3 = volumeM3; this.userAdded = userAdded;
-        }
-
-        public String getId() { return id; }
-        public String getDate() { return date; }
-        public double getVolumeM3() { return volumeM3; }
-        public String getUserAdded() { return userAdded; }
-
-        public void setVolumeM3(double volumeM3) { this.volumeM3 = volumeM3; }
-        public void setDate(String date) { this.date = date; }
+        alert.getDialogPane().getStylesheets().add(getClass().getResource("/view/controller/style.css").toExternalForm());
+        alert.showAndWait();
     }
 }
+
