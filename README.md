@@ -29,9 +29,13 @@ Para a execução correta do sistema fora do ambiente de desenvolvimento (IDE), 
 
 Para a execução correta do sistema fora do ambiente de desenvolvimento (IDE), a pasta de distribuição deve manter estritamente a seguinte organização de arquivos:
 
+## Estrutura de Distribuição
+
+Para a execução correta do sistema de forma independente, a pasta gerada pelo processo de build nativo mantém a seguinte organização estrutural:
+
 ```text
 PooAps/
-├── PooAps.exe                  # Executável gerado pelo Launch4j
+├── PooAps.exe                  # Executável nativo compilado via jpackage
 ├── agua.db                     # Banco de dados relacional SQLite
-├── app/                        # Arquivos e módulos internos da aplicação
-└── runtime/                    # Ambiente de execução integrado
+├── app/                        # Bytecode (.jar) e recursos internos do sistema
+└── runtime/                    # Ambiente de execução Java (JRE) customizado e isolado
