@@ -25,15 +25,13 @@ O projeto adota o padrão arquitetural MVC (Model-View-Controller) aliado ao pad
 
 Para a execução correta do sistema fora do ambiente de desenvolvimento (IDE), a pasta de distribuição deve manter estritamente a seguinte organização de arquivos:
 
+## Estrutura de Distribuição
+
+Para a execução correta do sistema fora do ambiente de desenvolvimento (IDE), a pasta de distribuição deve manter estritamente a seguinte organização de arquivos:
+
 ```text
-MonitoramentoHidrico/
-├── MonitoramentoHidrico.exe    # Executável gerado pelo Launch4j
-├── monitoramento.db           # Banco de dados relacional SQLite
-└── lib/                        # Dependências externas obrigatórias
-    ├── flatlaf-3.4.1.jar
-    ├── sqlite-jdbc-3.53.1.0.jar
-    ├── javafx.base.jar
-    ├── javafx.controls.jar
-    ├── javafx.fxml.jar
-    ├── javafx.graphics.jar
-    └── [Demais módulos JavaFX necessários]
+PooAps/
+├── PooAps.exe                  # Executável gerado pelo Launch4j
+├── agua.db                     # Banco de dados relacional SQLite
+├── app/                        # Arquivos e módulos internos da aplicação
+└── runtime/                    # Ambiente de execução integrado
